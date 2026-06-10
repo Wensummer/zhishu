@@ -98,38 +98,46 @@ export default function WorkbenchPage() {
         description="存量 + 新客客户/商机一览,商机判断、漏斗概览与人效。点击客户进入通话前简报。"
       />
 
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <StatCard
-          label="本月跟进客户"
-          value="32"
-          hint="较上月 +6"
-          trend="up"
-          icon={<Users className="h-5 w-5" />}
-        />
-        <StatCard
-          label="待跟进商机"
-          value="14"
-          hint="其中 5 个高意向"
-          trend="flat"
-          icon={<Target className="h-5 w-5" />}
-        />
-        <StatCard
-          label="推荐采纳率"
-          value="68%"
-          hint="较上月 +9%"
-          trend="up"
-          icon={<CheckCircle2 className="h-5 w-5" />}
-        />
-        <StatCard
-          label="续费率"
-          value="91%"
-          hint="较上月 +2%"
-          trend="up"
-          icon={<RefreshCw className="h-5 w-5" />}
-        />
-      </div>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* 左:2×2 指标卡 */}
+        <div className="grid grid-cols-2 gap-4">
+          <StatCard
+            label="本月跟进客户"
+            value="32"
+            hint="较上月 +6"
+            trend="up"
+            icon={<Users className="h-5 w-5" />}
+            series={[18, 22, 20, 25, 26, 29, 32]}
+          />
+          <StatCard
+            label="待跟进商机"
+            value="14"
+            hint="其中 5 个高意向"
+            trend="flat"
+            icon={<Target className="h-5 w-5" />}
+            series={[12, 15, 13, 14, 16, 13, 14]}
+          />
+          <StatCard
+            label="推荐采纳率"
+            value="68%"
+            hint="较上月 +9%"
+            trend="up"
+            icon={<CheckCircle2 className="h-5 w-5" />}
+            series={[52, 55, 58, 57, 61, 64, 68]}
+          />
+          <StatCard
+            label="续费率"
+            value="91%"
+            hint="较上月 +2%"
+            trend="up"
+            icon={<RefreshCw className="h-5 w-5" />}
+            series={[86, 88, 87, 89, 90, 89, 91]}
+          />
+        </div>
 
-      <FunnelOverview stages={FUNNEL} />
+        {/* 右:商机漏斗 */}
+        <FunnelOverview stages={FUNNEL} />
+      </div>
 
       <CustomerTable customers={DEMO_CUSTOMERS} />
     </>
