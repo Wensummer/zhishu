@@ -1,6 +1,6 @@
 import { formatPercent } from "@/lib/utils";
-import type { Announcement } from "@/lib/types";
-import { DEMO_MODELS, modelHealth } from "@/lib/demo/models";
+import { getModels, getAnnouncements } from "@/lib/api";
+import { modelHealth } from "@/lib/demo/models";
 import { PageHeader } from "@/components/layout/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,46 +30,12 @@ function availSeries(avail: number, seed: number): number[] {
   );
 }
 
-// —— 临时演示公告(定页面长相用);Phase 后期改为经 lib/api 取数 ——
-const ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: "a-1",
-    kind: "priceChange",
-    title: "DeepSeek-V3 输出价下调 12%",
-    body: "自 2026-06-15 起生效,提前 7 天公示。老客户合同锁价不受影响。",
-    modelId: "deepseek-v3",
-    publishedAt: "2026-06-08",
-  },
-  {
-    id: "a-2",
-    kind: "incident",
-    title: "DeepSeek-R1 短时延迟升高",
-    body: "06-06 14:20 ~ 15:05 TTFT 升高约 300ms,已扩容恢复,期间无请求失败。",
-    modelId: "deepseek-r1",
-    publishedAt: "2026-06-06",
-    resolvedAt: "2026-06-06",
-  },
-  {
-    id: "a-3",
-    kind: "shelf",
-    title: "新增上架 Kimi-128K 超长上下文",
-    body: "适配长文档 / RAG 场景,已纳入横评与选型引擎。",
-    modelId: "moonshot-128k",
-    publishedAt: "2026-06-01",
-  },
-  {
-    id: "a-4",
-    kind: "maintenance",
-    title: "文心一言-4.0 例行维护",
-    body: "05-30 02:00 ~ 02:30 滚动维护,采用灰度切换,服务不中断。",
-    modelId: "ernie-4",
-    publishedAt: "2026-05-30",
-    resolvedAt: "2026-05-30",
-  },
-];
-
 /** P1-6 可用性监控状态页。 */
-export default function StatusPage() {
+export default async function StatusPage() {
+  const [models, announcements] = await Promise.all([
+    getModels(),
+    getAnnouncements(),
+  ]);
   return (
     <>
       <PageHeader
@@ -77,7 +43,7 @@ export default function StatusPage() {
         description="模型晴雨表、分模型实时指标与趋势、调价与故障公告 —— 对外可展示的信任资产。"
       />
 
-      <HealthBarometer models={DEMO_MODELS} />
+      <HealthBarometer models={models} />
 
       <Card>
         <CardHeader className="pb-2">
@@ -97,7 +63,7 @@ export default function StatusPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {DEMO_MODELS.map((m, i) => {
+              {models.map((m, i) => {
                 const h = modelHealth(m);
                 const badge = HEALTH_BADGE[h];
                 return (
@@ -147,7 +113,7 @@ export default function StatusPage() {
           </CardTitle>
         </CardHeader>
         <CardContent className="pt-2">
-          <AnnouncementTimeline items={ANNOUNCEMENTS} />
+          <AnnouncementTimeline items={announcements} />
         </CardContent>
       </Card>
     </>

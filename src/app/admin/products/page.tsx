@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DEMO_MODELS } from "@/lib/demo/models";
+import { getModels } from "@/lib/api";
 
 // 演示:模型上下架与面向分层
 const SHELF: Record<string, { listed: boolean; tiers: string }> = {
@@ -25,7 +25,8 @@ const SHELF: Record<string, { listed: boolean; tiers: string }> = {
 };
 
 /** P2-12 产品配置(模型/套餐上下架与分层)。 */
-export default function AdminProductsPage() {
+export default async function AdminProductsPage() {
+  const models = await getModels();
   return (
     <>
       <PageHeader
@@ -47,7 +48,7 @@ export default function AdminProductsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {DEMO_MODELS.map((m) => {
+              {models.map((m) => {
                 const s = SHELF[m.id];
                 return (
                   <TableRow key={m.id}>

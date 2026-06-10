@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MaskedField } from "@/components/shared/masked-field";
-import { DEMO_MODELS } from "@/lib/demo/models";
+import { getModels } from "@/lib/api";
 
 const CODE = `from openai import OpenAI
 
@@ -21,7 +21,8 @@ resp = client.chat.completions.create(
 print(resp.choices[0].message.content)`;
 
 /** P2-10 统一接入 API 控制台。 */
-export default function ConsolePage() {
+export default async function ConsolePage() {
+  const models = await getModels();
   return (
     <>
       <PageHeader
@@ -30,7 +31,7 @@ export default function ConsolePage() {
         actions={
           <Badge variant="outline" className="gap-1">
             <Boxes className="h-3.5 w-3.5" />
-            {DEMO_MODELS.length} 个模型 · 全部已备案
+            {models.length} 个模型 · 全部已备案
           </Badge>
         }
       />
