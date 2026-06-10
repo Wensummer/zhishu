@@ -27,7 +27,8 @@ export interface SourceRef {
 export interface EvidenceFactor {
   key: string; // "capability" | "availability" | "costFactor" ...
   label: string; // "能力分" / "可用率" / "成本系数"
-  value: number; // 分项数值
+  value: number; // 分项数值(参与计算)
+  display?: string; // 预格式化展示串(各分项单位不同,如 "99.8%" / "×1.05");缺省则展示 value
   weight?: number; // 权重(可选)
   source: SourceRef; // 该项数据来源与采集时间
 }
