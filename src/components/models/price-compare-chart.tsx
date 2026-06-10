@@ -54,7 +54,7 @@ export function PriceCompareChart({ models }: { models: Model[] }) {
 
   return (
     <ResponsiveContainer width="100%" height={320}>
-      <ScatterChart margin={{ top: 12, right: 16, bottom: 16, left: -8 }}>
+      <ScatterChart margin={{ top: 12, right: 16, bottom: 20, left: 0 }}>
         <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
         <XAxis
           type="number"
@@ -67,7 +67,7 @@ export function PriceCompareChart({ models }: { models: Model[] }) {
           label={{
             value: "混合价(元/千 token)→ 越左越省",
             position: "insideBottom",
-            offset: -8,
+            offset: -10,
             fontSize: 12,
             fill: "hsl(var(--muted-foreground))",
           }}
@@ -80,14 +80,7 @@ export function PriceCompareChart({ models }: { models: Model[] }) {
           tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }}
           tickLine={false}
           axisLine={false}
-          width={48}
-          label={{
-            value: "能力分",
-            angle: -90,
-            position: "insideLeft",
-            fontSize: 12,
-            fill: "hsl(var(--muted-foreground))",
-          }}
+          width={40}
         />
         <ZAxis type="number" dataKey="availability" range={[80, 360]} />
         <Tooltip
