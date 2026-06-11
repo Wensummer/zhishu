@@ -36,6 +36,8 @@ import {
   type DashboardStat,
 } from "@/lib/demo/metrics";
 import type { Customer, TimeSeriesPoint } from "@/lib/types";
+import type { BillingRecord } from "@/lib/types";
+import { getCEndBillingRecords, getCustomerBillingRecords } from "@/lib/demo/billing";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
@@ -138,4 +140,45 @@ export async function saveSystemModels(
 ): Promise<SystemModelConfig> {
   if (!USE_MOCK) return putJson<SystemModelConfig>("/admin/system-models", config);
   return config;
+}
+
+// ============ 计费明细 ============
+export interface BillingQuery {
+  startDate?: string;
+  endDate?: string;
+  model?: string;
+  apiKeyName?: string;
+  customerId?: string; // 为空表示 C 端用户
+}
+
+export async function getBillingRecords(
+  query: BillingQuery = {}
+): Promise<BillingRecord[]> {
+  const { customerId, model, apiKeyName } = query;
+
+  if (!USE_MOCK) {
+    const params = new URLSearchParams();
+    if (customerId) params.set("customer_id", customerId);
+    if (model) params.set("model", model);
+    if (apiKeyName) params.set("api_key_name", apiKeyName);
+    const qs = params.toString();
+    return fetchJson<BillingRecord[]>(`/billing${qs ? `?${qs}` : ""}`);
+  }
+
+  let records: BillingRecord[];
+  if (customerId) {
+    records = getCustomerBillingRecords(customerId);
+  } else {
+    records = getCEndBillingRecords();
+  }
+
+  // 前端过滤
+  if (model) {
+    records = records.filter((r) => r.model === model);
+  }
+  if (apiKeyName) {
+    records = records.filter((r) => r.apiKeyName === apiKeyName);
+  }
+
+  return records;
 }

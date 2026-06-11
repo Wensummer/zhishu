@@ -9,12 +9,13 @@ import {
 } from "lucide-react";
 
 import { formatCNY } from "@/lib/utils";
-import { getBriefing } from "@/lib/api";
+import { getBriefing, getBillingRecords } from "@/lib/api";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendLineChart } from "@/components/charts/trend-line-chart";
+import { BillingDetailTable } from "@/components/shared/billing-detail-table";
 import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { BriefingRecommendationsClient } from "@/components/workbench/briefing-recommendations-client";
 import { BriefingScriptsClient } from "@/components/workbench/briefing-scripts-client";
@@ -27,6 +28,9 @@ export default async function BriefingPage({
 }) {
   const { customer, usage, recommendations, scripts, nextActions } =
     await getBriefing(params.customerId);
+  const billingRecords = await getBillingRecords({
+    customerId: params.customerId,
+  });
 
   return (
     <>
@@ -66,7 +70,7 @@ export default async function BriefingPage({
         </CardContent>
       </Card>
 
-      <Tabs defaultValue="recommend">
+      <Tabs defaultValue="usage">
         <TabsList>
           <TabsTrigger value="usage">使用情况</TabsTrigger>
           <TabsTrigger value="recommend">推荐选型</TabsTrigger>
@@ -74,7 +78,7 @@ export default async function BriefingPage({
           <TabsTrigger value="opportunity">商机判断</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="usage">
+        <TabsContent value="usage" className="space-y-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-base">用量趋势(万 token / 月)</CardTitle>
@@ -83,6 +87,7 @@ export default async function BriefingPage({
               <TrendLineChart data={usage} unit=" 万" />
             </CardContent>
           </Card>
+          <BillingDetailTable records={billingRecords} />
         </TabsContent>
 
         <TabsContent value="recommend" className="space-y-4">

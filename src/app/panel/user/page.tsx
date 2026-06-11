@@ -1,20 +1,14 @@
 import { Wallet, Activity, Receipt } from "lucide-react";
 
 import type { TimeSeriesPoint } from "@/lib/types";
+import { getBillingRecords } from "@/lib/api";
 import { formatCNY } from "@/lib/utils";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/shared/stat-card";
 import { TrendLineChart } from "@/components/charts/trend-line-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { BillingDetailTable } from "@/components/shared/billing-detail-table";
 
 const USAGE: TimeSeriesPoint[] = [
   { date: "6/4", value: 1.2 },
@@ -26,15 +20,10 @@ const USAGE: TimeSeriesPoint[] = [
   { date: "6/10", value: 1.9 },
 ];
 
-const BILLS = [
-  { date: "2026-06-09", model: "DeepSeek-V3", tokens: "2.6 万", amount: 5.2 },
-  { date: "2026-06-08", model: "通义千问-Plus", tokens: "2.0 万", amount: 4.1 },
-  { date: "2026-06-07", model: "DeepSeek-V3", tokens: "2.3 万", amount: 4.6 },
-  { date: "2026-06-06", model: "智谱 GLM-4", tokens: "1.5 万", amount: 7.5 },
-];
-
 /** P2-9 C 端用户面板。 */
-export default function UserPanelPage() {
+export default async function UserPanelPage() {
+  const records = await getBillingRecords();
+
   return (
     <>
       <PageHeader
@@ -78,35 +67,7 @@ export default function UserPanelPage() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-base">计费明细</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>日期</TableHead>
-                <TableHead>模型</TableHead>
-                <TableHead>用量</TableHead>
-                <TableHead className="text-right">金额</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {BILLS.map((b, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-muted-foreground">{b.date}</TableCell>
-                  <TableCell>{b.model}</TableCell>
-                  <TableCell className="tabular-nums">{b.tokens}</TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {formatCNY(b.amount, 1)}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <BillingDetailTable records={records} />
     </>
   );
 }

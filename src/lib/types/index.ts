@@ -105,6 +105,21 @@ export interface UsageRecord {
   lastActiveAt: string;
 }
 
+// ============ 计费明细 ============
+export interface BillingRecord {
+  id: string;
+  date: string; // ISO date
+  model: string; // 模型名称
+  modelId: string;
+  apiKeyName: string; // API Key 名称
+  tokens: number; // 消费 token 数
+  inputTokens: number;
+  outputTokens: number;
+  amount: number; // 消费金额(元)
+  unitPrice: number; // 单价(元/千 token)
+  billingMode: BillingMode;
+}
+
 // ============ 推荐 ============
 export type RecommendationType =
   | "renew"
