@@ -6,6 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EvidenceChainCard } from "@/components/evidence/evidence-chain-card";
 
+import type { KnowledgeEvidenceRecord } from "@/lib/dify/types";
+import type { ConfidenceBreakdown } from "@/lib/recommendation/confidence";
+import { RecommendationInsightCard } from "@/components/evidence/recommendation-insight-card";
+
 const TYPE_META: Record<
   RecommendationType,
   { label: string; icon: React.ReactNode }
@@ -21,17 +25,23 @@ const TYPE_META: Record<
 export function RecommendationCard({
   recommendation: r,
   defaultOpenEvidence,
+  confidence,
+  records,
+  loading,
 }: {
   recommendation: Recommendation;
   defaultOpenEvidence?: boolean;
+  confidence?: ConfidenceBreakdown;
+  records?: KnowledgeEvidenceRecord[];
+  loading?: boolean;
 }) {
   const meta = TYPE_META[r.type];
   return (
     <Card>
       <CardContent className="space-y-3 p-5">
-        <div className="flex items-start justify-between gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <Badge variant="secondary" className="gap-1">
                 {meta.icon}
                 {meta.label}
@@ -40,7 +50,7 @@ export function RecommendationCard({
             </div>
             <p className="text-sm text-muted-foreground">{r.reason}</p>
           </div>
-          <div className="shrink-0 text-right">
+          <div className="shrink-0 sm:text-right">
             <div className="text-xs text-muted-foreground">报价区间</div>
             <div className="font-semibold tabular-nums">
               {formatRange(r.quoteRange)}
@@ -48,6 +58,15 @@ export function RecommendationCard({
           </div>
         </div>
         <EvidenceChainCard chain={r.evidenceChain} defaultOpen={defaultOpenEvidence} />
+        {confidence && (
+          <RecommendationInsightCard
+            modelName={r.title}
+            confidence={confidence}
+            records={records ?? []}
+            loading={loading}
+            embedded
+          />
+        )}
       </CardContent>
     </Card>
   );

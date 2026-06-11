@@ -4,7 +4,9 @@ import * as React from "react";
 import { ArrowLeft, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
 
 import type { Model, Recommendation, WizardQuestion } from "@/lib/types";
+import type { RecommendationKnowledgeBatchResponse } from "@/lib/dify/types";
 import { blendedPrice } from "@/lib/demo/models";
+import { calculateConfidence } from "@/lib/recommendation/confidence";
 import { scoreModel } from "@/lib/recommendation/score";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -76,11 +78,18 @@ function rankModels(models: Model[], answers: Record<string, string>) {
   return models
     .map((m) => {
       let s = scoreModel(m).score;
-      if (m.useCases.some((u) => sceneKw.some((k) => u.includes(k)))) s += 4;
+      const sceneMatched = m.useCases.some((u) =>
+        sceneKw.some((k) => u.includes(k))
+      );
+      if (sceneMatched) s += 4;
       if (answers.latency === "high") s -= (m.ttftMs - 400) / 120;
       if (answers.budget === "low") s += (0.06 - blendedPrice(m)) * 30;
       if (answers.budget === "high") s += (m.capabilityScore - 88) * 0.4;
-      return { model: m, adjusted: Math.round(s * 10) / 10 };
+      return {
+        model: m,
+        adjusted: Math.round(s * 10) / 10,
+        sceneMatched,
+      };
     })
     .sort((a, b) => b.adjusted - a.adjusted);
 }
@@ -111,6 +120,12 @@ function buildRecommendation(
 export function WizardClient({ models }: { models: Model[] }) {
   const [step, setStep] = React.useState(0);
   const [answers, setAnswers] = React.useState<Record<string, string>>({});
+  const [knowledge, setKnowledge] =
+    React.useState<RecommendationKnowledgeBatchResponse | null>(null);
+  const [knowledgeLoading, setKnowledgeLoading] = React.useState(false);
+  const [knowledgeError, setKnowledgeError] = React.useState<string | null>(
+    null
+  );
 
   const done = step >= QUESTIONS.length;
   const current = QUESTIONS[step];
@@ -122,11 +137,71 @@ export function WizardClient({ models }: { models: Model[] }) {
   function reset() {
     setStep(0);
     setAnswers({});
+    setKnowledge(null);
+    setKnowledgeError(null);
   }
 
   const ranked = done ? rankModels(models, answers) : [];
   const top = ranked[0];
   const alternatives = ranked.slice(1, 3);
+  const candidateJson = JSON.stringify(
+    ranked.slice(0, 3).map(({ model }) => ({
+      modelId: model.id,
+      modelName: model.name,
+    }))
+  );
+
+  React.useEffect(() => {
+    if (!done || candidateJson === "[]") return;
+
+    const controller = new AbortController();
+    setKnowledge(null);
+    setKnowledgeError(null);
+    setKnowledgeLoading(true);
+
+    fetch("/api/recommendation-evidence", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        candidates: JSON.parse(candidateJson) as Array<{
+          modelId: string;
+          modelName: string;
+        }>,
+        answers: {
+          scene: answers.scene,
+          scale: answers.scale,
+          latency: answers.latency,
+          budget: answers.budget,
+        },
+      }),
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("knowledge_retrieval_failed");
+        return response.json() as Promise<RecommendationKnowledgeBatchResponse>;
+      })
+      .then(setKnowledge)
+      .catch((error: unknown) => {
+        if (error instanceof Error && error.name === "AbortError") return;
+        setKnowledgeError("知识库依据暂时不可用，量化评分结果不受影响。");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setKnowledgeLoading(false);
+      });
+
+    return () => controller.abort();
+  }, [
+    done,
+    candidateJson,
+    answers.scene,
+    answers.scale,
+    answers.latency,
+    answers.budget,
+  ]);
+
+  const knowledgeByModel = new Map(
+    (knowledge?.results ?? []).map((result) => [result.modelId, result.records])
+  );
 
   return (
     <div className="mx-auto w-full max-w-2xl">
@@ -172,31 +247,64 @@ export function WizardClient({ models }: { models: Model[] }) {
             <RecommendationCard
               recommendation={buildRecommendation(top.model, answers)}
               defaultOpenEvidence
+              confidence={calculateConfidence({
+                rank: 0,
+                adjustedScore: top.adjusted,
+                nextScore: ranked[1]?.adjusted,
+                sceneMatched: top.sceneMatched,
+                records: knowledgeByModel.get(top.model.id) ?? [],
+              })}
+              records={knowledgeByModel.get(top.model.id) ?? []}
+              loading={knowledgeLoading}
+            />
+          )}
+          {top && knowledgeError && (
+            <p className="text-xs text-muted-foreground">{knowledgeError}</p>
+          )}
+              defaultOpenEvidence
+              confidence={calculateConfidence({
+                rank: 0,
+                adjustedScore: top.adjusted,
+                nextScore: ranked[1]?.adjusted,
+                sceneMatched: top.sceneMatched,
+                records: knowledgeByModel.get(top.model.id) ?? [],
+              })}
+              records={knowledgeByModel.get(top.model.id) ?? []}
+              loading={knowledgeLoading}
             />
           )}
 
           {alternatives.length > 0 && (
-            <Card>
-              <CardContent className="space-y-2 p-5">
-                <p className="text-sm font-medium">备选(综合分接近)</p>
-                {alternatives.map(({ model, adjusted }) => (
-                  <div
-                    key={model.id}
-                    className="flex items-center justify-between text-sm"
-                  >
-                    <span>
-                      {model.name}
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        {model.vendor}
-                      </span>
-                    </span>
-                    <Badge variant="outline" className="tabular-nums">
-                      {adjusted.toFixed(1)}
-                    </Badge>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
+            <div className="space-y-3">
+              <div>
+                <p className="text-sm font-medium">????</p>
+                <p className="text-xs text-muted-foreground">
+                  ???????????????????????
+                </p>
+              </div>
+              {alternatives.map(
+                ({ model, adjusted, sceneMatched }, alternativeIndex) => {
+                  const rank = alternativeIndex + 1;
+                  const records = knowledgeByModel.get(model.id) ?? [];
+                  const altConfidence = calculateConfidence({
+                    rank,
+                    adjustedScore: adjusted,
+                    nextScore: ranked[rank + 1]?.adjusted,
+                    sceneMatched,
+                    records,
+                  });
+                  return (
+                    <RecommendationCard
+                      key={model.id}
+                      recommendation={buildRecommendation(model, answers)}
+                      confidence={altConfidence}
+                      records={records}
+                      loading={knowledgeLoading}
+                    />
+                  );
+                }
+              )}
+            </div>
           )}
         </div>
       )}

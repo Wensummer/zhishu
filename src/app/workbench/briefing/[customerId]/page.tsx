@@ -16,7 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendLineChart } from "@/components/charts/trend-line-chart";
 import { OpportunityTag } from "@/components/workbench/opportunity-tag";
-import { RecommendationCard } from "@/components/workbench/recommendation-card";
+import { BriefingRecommendationsClient } from "@/components/workbench/briefing-recommendations-client";
 import { TalkScriptCard } from "@/components/workbench/talk-script-card";
 
 /** P0-2 通话前智能简报(单客户详情)。 */
@@ -86,14 +86,11 @@ export default async function BriefingPage({
         </TabsContent>
 
         <TabsContent value="recommend" className="space-y-4">
-          {recommendations.map((r, i) => (
-            <RecommendationCard
-              key={r.id}
-              recommendation={r}
-              defaultOpenEvidence={i === 0}
-            />
-          ))}
-        </TabsContent>
+          <BriefingRecommendationsClient
+            recommendations={recommendations}
+            customerName={customer.name}
+            industry={customer.industry}
+          /></TabsContent>
 
         <TabsContent value="scripts" className="grid gap-3 md:grid-cols-2">
           {scripts.map((s) => (
