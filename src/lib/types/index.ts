@@ -209,3 +209,31 @@ export interface WizardQuestion {
   field: "scene" | "scale" | "latency" | "budget";
   options: { label: string; value: string }[];
 }
+
+// ============ 系统模型配置(各能力位绑定的模型) ============
+/** 语音转写(ASR)模型 —— 与对话模型池不同的一类候选。 */
+export interface AsrModel {
+  id: string;
+  name: string;
+  vendor: string;
+  filed: boolean; // 是否已备案
+  realtime: boolean; // 是否支持流式实时转写
+  latencyMs?: number; // 参考首字延迟
+}
+
+/** 系统能力位:平台自身各环节用哪个模型(对内编排,区别于对外可售的模型池)。 */
+export type CapabilitySlotKey =
+  | "asr" // 语音转写
+  | "chatbot" // 配置答疑
+  | "intent" // 意图识别
+  | "summary" // 复盘摘要
+  | "selection"; // 选型 RAG
+
+/** 候选来源:对话模型池 / 语音模型。 */
+export type SlotKind = "chat" | "asr";
+
+/** 系统模型配置:能力位 → 选定模型 id。 */
+export interface SystemModelConfig {
+  bindings: Record<CapabilitySlotKey, string>;
+  updatedAt?: string;
+}

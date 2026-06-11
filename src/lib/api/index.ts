@@ -6,8 +6,18 @@
  * 接后端:把 NEXT_PUBLIC_USE_MOCK 设为 "false" 并实现下方 fetch 分支即可,
  *         页面与组件一行都不用改(lib/types 即前后端共享契约)。
  */
-import type { Announcement, Metric, Model } from "@/lib/types";
+import type {
+  Announcement,
+  AsrModel,
+  Metric,
+  Model,
+  SystemModelConfig,
+} from "@/lib/types";
 import { DEMO_MODELS } from "@/lib/demo/models";
+import {
+  DEMO_ASR_MODELS,
+  DEFAULT_SYSTEM_CONFIG,
+} from "@/lib/demo/system-models";
 import {
   DEMO_CUSTOMERS,
   WORKBENCH_FUNNEL,
@@ -33,6 +43,17 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE ?? "";
 /** 真实后端取数(接后端时启用)。 */
 async function fetchJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_BASE}${path}`, { cache: "no-store" });
+  if (!res.ok) throw new Error(`API ${path} 失败:${res.status}`);
+  return res.json() as Promise<T>;
+}
+
+/** 真实后端写入(接后端时启用)。 */
+async function putJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
   if (!res.ok) throw new Error(`API ${path} 失败:${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -93,4 +114,28 @@ export async function getDashboard(): Promise<DashboardData> {
     funnel: ADMIN_FUNNEL,
     trustMetrics: TRUST_METRICS,
   };
+}
+
+// ============ 系统模型配置 ============
+export interface SystemModelsData {
+  config: SystemModelConfig;
+  asrModels: AsrModel[];
+}
+export async function getSystemModels(): Promise<SystemModelsData> {
+  if (!USE_MOCK) {
+    const [config, asrModels] = await Promise.all([
+      fetchJson<SystemModelConfig>("/admin/system-models"),
+      fetchJson<AsrModel[]>("/admin/asr-models"),
+    ]);
+    return { config, asrModels };
+  }
+  return { config: DEFAULT_SYSTEM_CONFIG, asrModels: DEMO_ASR_MODELS };
+}
+
+/** 保存系统模型配置。mock 下为空操作(仅前端状态);接后端时 PUT 落库。 */
+export async function saveSystemModels(
+  config: SystemModelConfig
+): Promise<SystemModelConfig> {
+  if (!USE_MOCK) return putJson<SystemModelConfig>("/admin/system-models", config);
+  return config;
 }

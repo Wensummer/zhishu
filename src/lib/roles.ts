@@ -39,6 +39,7 @@ export const ROLES: Record<Role, RoleConfig> = {
     nav: [
       { href: "/admin", label: "数据大屏" },
       { href: "/admin/products", label: "产品配置" },
+      { href: "/admin/system-models", label: "系统模型配置" },
       { href: "/admin/pricing", label: "价格配置" },
       { href: "/admin/operations", label: "运营分析" },
       { href: "/admin/compliance", label: "合规管理" },
