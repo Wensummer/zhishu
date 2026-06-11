@@ -25,10 +25,10 @@ interface DifyRetrieveResponse {
   }>;
 }
 
-function getConfig() {
+function getConfig(datasetIdOverride?: string) {
   const apiBaseUrl = process.env.DIFY_API_BASE_URL?.replace(/\/+$/, "");
   const apiKey = process.env.DIFY_DATASET_API_KEY;
-  const datasetId = process.env.DIFY_DATASET_ID;
+  const datasetId = datasetIdOverride || process.env.DIFY_DATASET_ID;
 
   if (!apiBaseUrl || !apiKey || !datasetId) {
     throw new Error("Dify knowledge base is not configured");
@@ -66,9 +66,10 @@ function normalizeRecord(
 
 /** 从 Dify 知识库检索选型理论依据，仅允许在服务端调用。 */
 export async function retrieveKnowledge(
-  query: string
+  query: string,
+  datasetIdOverride?: string
 ): Promise<KnowledgeEvidenceResponse> {
-  const { apiBaseUrl, apiKey, datasetId } = getConfig();
+  const { apiBaseUrl, apiKey, datasetId } = getConfig(datasetIdOverride);
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 12_000);
 

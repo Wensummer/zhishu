@@ -2,6 +2,9 @@ import { NextResponse } from "next/server";
 
 import { retrieveKnowledge } from "@/lib/dify/knowledge";
 
+/** 选型推荐专用知识库。 */
+const RECOMMENDATION_DATASET_ID = "d424c25e-a466-4e1a-9f9a-d863e61c52d2";
+
 const OPTIONS = {
   scene: ["general", "code", "longdoc", "reasoning"],
   scale: ["small", "medium", "large"],
@@ -104,7 +107,8 @@ export async function POST(request: Request) {
         modelId,
         modelName,
         ...(await retrieveKnowledge(
-          buildQuery(modelName, answers as Answers)
+          buildQuery(modelName, answers as Answers),
+          RECOMMENDATION_DATASET_ID
         )),
       }))
     );

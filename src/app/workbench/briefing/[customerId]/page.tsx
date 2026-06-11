@@ -17,7 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendLineChart } from "@/components/charts/trend-line-chart";
 import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { BriefingRecommendationsClient } from "@/components/workbench/briefing-recommendations-client";
-import { TalkScriptCard } from "@/components/workbench/talk-script-card";
+import { BriefingScriptsClient } from "@/components/workbench/briefing-scripts-client";
 
 /** P0-2 通话前智能简报(单客户详情)。 */
 export default async function BriefingPage({
@@ -92,10 +92,8 @@ export default async function BriefingPage({
             industry={customer.industry}
           /></TabsContent>
 
-        <TabsContent value="scripts" className="grid gap-3 md:grid-cols-2">
-          {scripts.map((s) => (
-            <TalkScriptCard key={s.id} script={s} />
-          ))}
+        <TabsContent value="scripts">
+          <BriefingScriptsClient scripts={scripts} customerName={customer.name} />
         </TabsContent>
 
         <TabsContent value="opportunity">
