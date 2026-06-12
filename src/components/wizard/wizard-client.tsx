@@ -261,18 +261,6 @@ export function WizardClient({ models }: { models: Model[] }) {
           {top && knowledgeError && (
             <p className="text-xs text-muted-foreground">{knowledgeError}</p>
           )}
-              defaultOpenEvidence
-              confidence={calculateConfidence({
-                rank: 0,
-                adjustedScore: top.adjusted,
-                nextScore: ranked[1]?.adjusted,
-                sceneMatched: top.sceneMatched,
-                records: knowledgeByModel.get(top.model.id) ?? [],
-              })}
-              records={knowledgeByModel.get(top.model.id) ?? []}
-              loading={knowledgeLoading}
-            />
-          )}
 
           {alternatives.length > 0 && (
             <div className="space-y-3">
