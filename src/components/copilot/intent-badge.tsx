@@ -13,5 +13,9 @@ const META: Record<
 /** 意图/商机意向标签。 */
 export function IntentBadge({ level }: { level: IntentLevel }) {
   const m = META[level];
-  return <Badge variant={m.variant}>{m.label}</Badge>;
+  return (
+    <Badge variant={m.variant} className="shrink-0 whitespace-nowrap">
+      {m.label}
+    </Badge>
+  );
 }
