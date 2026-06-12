@@ -20,6 +20,7 @@ import { TranscriptStream } from "@/components/copilot/transcript-stream";
 import { IntentBadge } from "@/components/copilot/intent-badge";
 import { RecommendationCard } from "@/components/workbench/recommendation-card";
 import { TalkScriptCard } from "@/components/workbench/talk-script-card";
+import { LiveCopilotClient } from "@/components/copilot/live-copilot-client";
 
 const TICK_MS = 700; // 每 700ms 推进 1 秒
 
@@ -34,6 +35,7 @@ export function CopilotClient({
   const { maxSec, transcript, intents, recommendations, scripts } = session;
   const [elapsed, setElapsed] = React.useState(0);
   const [playing, setPlaying] = React.useState(false);
+  const [mode, setMode] = React.useState<"replay" | "live">("replay");
 
   React.useEffect(() => {
     if (!playing) return;
@@ -69,8 +71,40 @@ export function CopilotClient({
     setPlaying(true);
   }
 
+  const modeToggle = (
+    <div className="flex gap-2">
+      <Button
+        size="sm"
+        variant={mode === "replay" ? "default" : "outline"}
+        onClick={() => setMode("replay")}
+      >
+        剧本回放(演示)
+      </Button>
+      <Button
+        size="sm"
+        variant={mode === "live" ? "default" : "outline"}
+        onClick={() => setMode("live")}
+      >
+        实时麦克风(Web Speech)
+      </Button>
+    </div>
+  );
+
+  if (mode === "live") {
+    return (
+      <>
+        {modeToggle}
+        <LiveCopilotClient
+          customerId={customerId}
+          customerName={session.customerName}
+        />
+      </>
+    );
+  }
+
   return (
     <>
+      {modeToggle}
       <PageHeader
         title="通话中实时 Copilot"
         description={`${session.customerName}(${customerId}) · 实时 ASR + 意图识别 + 动态弹屏推荐与话术`}

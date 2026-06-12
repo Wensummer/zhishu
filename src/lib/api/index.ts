@@ -35,8 +35,14 @@ import {
   TRUST_METRICS,
   type DashboardStat,
 } from "@/lib/demo/metrics";
-import type { Customer, TimeSeriesPoint } from "@/lib/types";
-import type { BillingRecord } from "@/lib/types";
+import type {
+  BillingRecord,
+  Customer,
+  IntentEvent,
+  Recommendation,
+  TalkScript,
+  TimeSeriesPoint,
+} from "@/lib/types";
 import { getCEndBillingRecords, getCustomerBillingRecords } from "@/lib/demo/billing";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
@@ -93,6 +99,28 @@ export async function getCopilotSession(
 ): Promise<CopilotScript> {
   if (!USE_MOCK) return fetchJson<CopilotScript>(`/copilot/${customerId}`);
   return getCopilotScript(customerId);
+}
+
+// ============ 实时通话:意图分析(浏览器转写后,文本送后端) ============
+export interface AnalyzeResult {
+  intent: IntentEvent;
+  recommendation?: Recommendation;
+  script?: TalkScript;
+}
+
+/** 把客户一句话(已由浏览器 Web Speech 转写)送后端,换回意图 + 触发的推荐/话术。 */
+export async function analyzeUtterance(
+  text: string,
+  context?: string
+): Promise<AnalyzeResult> {
+  // 走同源转发路由(见 app/api/copilot/analyze/route.ts),避免跨端口/跨域
+  const res = await fetch(`/api/copilot/analyze`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text, context }),
+  });
+  if (!res.ok) throw new Error(`analyze 失败:${res.status}`);
+  return res.json() as Promise<AnalyzeResult>;
 }
 
 // ============ 可用性公告 ============
