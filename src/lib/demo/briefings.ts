@@ -1,7 +1,7 @@
 /**
  * 演示用通话前简报数据(临时)。Phase 后期由 lib/api 按 customerId 取数替换。
  */
-import type { Recommendation, TalkScript, TimeSeriesPoint } from "@/lib/types";
+import type { Recommendation, TalkScript, TelecomProduct, TimeSeriesPoint } from "@/lib/types";
 
 import {
   RENEW_SCRIPTS,
@@ -30,6 +30,7 @@ export interface Briefing {
   usage: TimeSeriesPoint[];
   recommendations: Recommendation[];
   scripts: TalkScript[];
+  telecomProducts: TelecomProduct[];
   nextActions: string[];
 }
 
@@ -98,6 +99,32 @@ const BRIEFING_RENEW: Briefing = {
     },
   ],
   scripts: RENEW_SCRIPTS,
+  TelecomProducts: [
+    {
+      id: "tp-1",
+      name: "天翼云专线",
+      description: "提供稳定低延迟的专属网络连接，保障数据传输质量",
+      category: "云专线",
+      reason: "制造企业对实时数据传输要求高，云专线可提升工厂与云端的连接稳定性",
+      estimatedPrice: "2000~5000元/月",
+    },
+    {
+      id: "tp-2",
+      name: "天翼云会议",
+      description: "高清视频会议服务，支持多方协同与屏幕共享",
+      category: "云会议",
+      reason: "跨部门协同频繁，云会议可降低差旅成本、提升沟通效率",
+      estimatedPrice: "299元/月起",
+    },
+    {
+      id: "tp-3",
+      name: "天翼云安全·WAF",
+      description: "Web应用防火墙，防御SQL注入、XSS等攻击",
+      category: "云安全",
+      reason: "制造企业MES等系统暴露面扩大，急需Web安全防护",
+      estimatedPrice: "1500元/月",
+    },
+  ],
   nextActions: [
     "本周内电话确认续约意向,主推包年锁价",
     "同步抛出质检 Agent 增值包,试探加推空间",
@@ -170,6 +197,32 @@ const BRIEFING_UPGRADE: Briefing = {
     },
   ],
   scripts: UPGRADE_SCRIPTS,
+  TelecomProducts: [
+    {
+      id: "tp-1",
+      name: "天翼云CDN",
+      description: "内容分发加速网络，优化音视频内容传输体验",
+      category: "云网络",
+      reason: "媒体内容分发量持续增长，CDN加速可显著提升用户体验并降低源站压力",
+      estimatedPrice: "0.26元/GB（按量）",
+    },
+    {
+      id: "tp-2",
+      name: "天翼云媒体存储",
+      description: "大容量对象存储服务，支持图片、视频等媒体文件海量存储",
+      category: "云存储",
+      reason: "文化传媒企业素材文件量大，媒体存储提供低成本高可靠的归档方案",
+      estimatedPrice: "0.099元/GB/月",
+    },
+    {
+      id: "tp-3",
+      name: "天翼云安全·DDoS高防",
+      description: "DDoS高防IP服务，抵御大流量攻击保障业务连续",
+      category: "云安全",
+      reason: "内容发布业务面临DDoS攻击风险，高防IP保障文章/视频正常分发",
+      estimatedPrice: "3000元/月起",
+    },
+  ],
   nextActions: [
     "本周内联系客户,建议升级到包年企业版锁定单价",
     "准备用量趋势对比表,量化超量风险",
@@ -241,6 +294,32 @@ const BRIEFING_EXPAND: Briefing = {
     },
   ],
   scripts: EXPAND_SCRIPTS,
+  TelecomProducts: [
+    {
+      id: "tp-1",
+      name: "天翼云SSL证书",
+      description: "提供网站HTTPS加密和身份认证，保障数据传输安全",
+      category: "云安全",
+      reason: "金融科技业务涉及大量用户敏感数据，全站HTTPS是合规刚需",
+      estimatedPrice: "2999元/年",
+    },
+    {
+      id: "tp-2",
+      name: "天翼云容灾备份",
+      description: "跨区域数据容灾备份，确保业务连续性和数据可恢复",
+      category: "云容灾",
+      reason: "金融监管对数据容灾有明确要求，多点备份可满足合规与风控标准",
+      estimatedPrice: "5000~8000元/月",
+    },
+    {
+      id: "tp-3",
+      name: "天翼云数据库RDS",
+      description: "高可用关系型数据库服务，支持MySQL/PG/SQL Server",
+      category: "云数据库",
+      reason: "业务量快速增长，自建数据库难以支撑弹性扩展需求，RDS可平滑扩容",
+      estimatedPrice: "约2000元/月",
+    },
+  ],
   nextActions: [
     "准备多部门扩容方案,包含独立配额与统一管控架构图",
     "联系客户,建议先做 1-2 个部门的扩容量化 POC",
@@ -313,6 +392,24 @@ const BRIEFING_SILENT: Briefing = {
     },
   ],
   scripts: SILENT_SCRIPTS,
+  TelecomProducts: [
+    {
+      id: "tp-1",
+      name: "天翼云轻量服务器",
+      description: "低成本云服务器，适合轻量级Web应用部署",
+      category: "云主机",
+      reason: "客户用量较低，轻量服务器可满足基本运行需求且成本可控",
+      estimatedPrice: "50~200元/月",
+    },
+    {
+      id: "tp-2",
+      name: "天翼云企业邮箱",
+      description: "安全稳定的企业邮箱服务，支持定制域名和超大附件",
+      category: "企业应用",
+      reason: "教育机构日常办公通信刚需，企业邮箱提升专业形象",
+      estimatedPrice: "约15元/用户/月",
+    },
+  ],
   nextActions: [
     "立即联系客户,了解用量下滑原因",
     "推荐轻量入门版或按量付费,降低续费门槛",
@@ -385,6 +482,24 @@ const BRIEFING_NEWLEAD: Briefing = {
     },
   ],
   scripts: NEWLEAD_SCRIPTS,
+  TelecomProducts: [
+    {
+      id: "tp-1",
+      name: "天翼云企业宽带",
+      description: "高速稳定的企业宽带接入，支持上下行对称带宽",
+      category: "企业网络",
+      reason: "新客户首次合作，从基础通信服务切入可建立信任关系",
+      estimatedPrice: "399元/月起",
+    },
+    {
+      id: "tp-2",
+      name: "天翼云总机",
+      description: "企业云总机服务，支持IVR导航、来电转接、通话录音",
+      category: "企业通信",
+      reason: "出行/物流行业客户咨询量大，云总机可统一管理来电并提高接听效率",
+      estimatedPrice: "约30元/用户/月",
+    },
+  ],
   nextActions: [
     "尽快首次联系客户,了解具体业务场景",
     "准备出行/物流行业案例,建立信任",

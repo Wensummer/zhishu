@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Search, ChevronRight } from "lucide-react";
+import { Search, ChevronRight, Globe } from "lucide-react";
 
 import { formatCNY } from "@/lib/utils";
 import type { Customer, OpportunityStage } from "@/lib/types";
@@ -81,6 +81,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
               <TableHead className="text-right">月消费</TableHead>
               <TableHead>到期</TableHead>
               <TableHead>商机判断</TableHead>
+              <TableHead>其他电信业务推荐</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
@@ -114,6 +115,24 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
                 <TableCell>
                   <OpportunityTag stage={c.stage} />
                 </TableCell>
+                <TableCell>
+                  {c.telecomProducts && c.telecomProducts.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {c.telecomProducts.map((p) => (
+                        <Badge
+                          key={p}
+                          variant="outline"
+                          className="gap-1 text-[10px]"
+                        >
+                          <Globe className="h-2.5 w-2.5" />
+                          {p}
+                        </Badge>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <Button asChild size="sm" variant="ghost">
                     <Link href={`/workbench/briefing/${c.id}`}>
@@ -127,7 +146,7 @@ export function CustomerTable({ customers }: { customers: Customer[] }) {
             {rows.length === 0 && (
               <TableRow>
                 <TableCell
-                  colSpan={7}
+                  colSpan={8}
                   className="py-10 text-center text-muted-foreground"
                 >
                   没有匹配的客户

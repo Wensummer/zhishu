@@ -95,6 +95,7 @@ export interface Customer {
   ownerManagerId: string;
   contact?: string; // 联系人(脱敏)
   monthlySpend?: number; // 月消费(元)
+  telecomProducts?: string[]; // 其他电信业务推荐(产品名称列表)
 }
 
 export interface UsageRecord {
@@ -138,6 +139,16 @@ export interface Recommendation {
   reason: string; // 更省 / 更稳 / 更配场景
   quoteRange: [number, number]; // 报价区间
   evidenceChain: EvidenceChain; // ★ 可核验证据链
+}
+
+// ============ 其他电信业务推荐 ============
+export interface TelecomProduct {
+  id: string;
+  name: string;
+  description: string;
+  category: string; // 如 "云专线" / "云安全" / "云会议"
+  reason: string; // 推荐理由
+  estimatedPrice: string; // 预估价格描述
 }
 
 // ============ 话术 ============

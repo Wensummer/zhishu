@@ -19,6 +19,7 @@ import { BillingDetailTable } from "@/components/shared/billing-detail-table";
 import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { BriefingRecommendationsClient } from "@/components/workbench/briefing-recommendations-client";
 import { BriefingScriptsClient } from "@/components/workbench/briefing-scripts-client";
+import { TelecomRecommendCard } from "@/components/workbench/telecom-recommend-card";
 
 /** P0-2 通话前智能简报(单客户详情)。 */
 export default async function BriefingPage({
@@ -26,7 +27,7 @@ export default async function BriefingPage({
 }: {
   params: { customerId: string };
 }) {
-  const { customer, usage, recommendations, scripts, nextActions } =
+  const { customer, usage, recommendations, scripts, telecomProducts, nextActions } =
     await getBriefing(params.customerId);
   const billingRecords = await getBillingRecords({
     customerId: params.customerId,
@@ -101,7 +102,7 @@ export default async function BriefingPage({
           <BriefingScriptsClient scripts={scripts} customerName={customer.name} />
         </TabsContent>
 
-        <TabsContent value="opportunity">
+        <TabsContent value="opportunity" className="space-y-4">
           <Card>
             <CardContent className="space-y-3 p-5">
               <div className="flex items-center gap-2">
@@ -118,6 +119,17 @@ export default async function BriefingPage({
                   ))}
                 </ul>
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base">其他电信业务推荐</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {telecomProducts.map((product) => (
+                <TelecomRecommendCard key={product.id} product={product} />
+              ))}
             </CardContent>
           </Card>
         </TabsContent>

@@ -19,6 +19,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     ownerManagerId: "m-01",
     contact: "周经理",
     monthlySpend: 24800,
+    telecomProducts: ["天翼云专线", "天翼云会议", "天翼云安全·WAF"],
   },
   {
     id: "c-1031",
@@ -34,6 +35,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     ownerManagerId: "m-01",
     contact: "林总",
     monthlySpend: 15600,
+    telecomProducts: ["天翼云CDN", "天翼云媒体存储", "天翼云安全·DDoS高防"],
   },
   {
     id: "c-1042",
@@ -49,6 +51,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     ownerManagerId: "m-01",
     contact: "吴总监",
     monthlySpend: 86000,
+    telecomProducts: ["天翼云SSL证书", "天翼云容灾备份", "天翼云数据库RDS"],
   },
   {
     id: "c-1055",
@@ -64,6 +67,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     ownerManagerId: "m-01",
     contact: "陈老师",
     monthlySpend: 3200,
+    telecomProducts: ["天翼云轻量服务器", "天翼云企业邮箱"],
   },
   {
     id: "c-2003",
@@ -74,6 +78,7 @@ export const DEMO_CUSTOMERS: Customer[] = [
     tags: ["官网咨询", "待画像"],
     ownerManagerId: "m-01",
     contact: "赵经理",
+    telecomProducts: ["天翼云企业宽带", "天翼云总机"],
   },
 ];
 
