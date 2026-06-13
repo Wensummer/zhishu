@@ -102,10 +102,17 @@ export async function getCopilotSession(
 }
 
 // ============ 实时通话:意图分析(浏览器转写后,文本送后端) ============
+export interface NeedProfile {
+  task?: string;
+  scale?: string;
+  priceSensitive?: boolean;
+}
+
 export interface AnalyzeResult {
   intent: IntentEvent;
   recommendation?: Recommendation;
   script?: TalkScript;
+  need?: NeedProfile; // 抽出的结构化需求,用于查 Dify 推荐场景
 }
 
 /** 把客户一句话(已由浏览器 Web Speech 转写)送后端,换回意图 + 触发的推荐/话术。 */
@@ -121,6 +128,25 @@ export async function analyzeUtterance(
   });
   if (!res.ok) throw new Error(`analyze 失败:${res.status}`);
   return res.json() as Promise<AnalyzeResult>;
+}
+
+/** 每轮客户发言后,异步生成"给销售的话术"(后端检索话术库 + LLM)。模型字段可空(纯异议应对)。 */
+export async function generateScript(params: {
+  text: string;
+  context?: string;
+  needType?: string;
+  note?: string;
+  targetModelId?: string;
+  reason?: string;
+  score?: number;
+}): Promise<TalkScript> {
+  const res = await fetch(`/api/copilot/script`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) throw new Error(`script 失败:${res.status}`);
+  return res.json() as Promise<TalkScript>;
 }
 
 // ============ 可用性公告 ============

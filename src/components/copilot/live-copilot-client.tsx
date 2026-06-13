@@ -9,7 +9,12 @@ import type {
   TalkScript,
   TranscriptLine,
 } from "@/lib/types";
-import { analyzeUtterance } from "@/lib/api";
+import { analyzeUtterance, generateScript, type NeedProfile } from "@/lib/api";
+import {
+  calculateConfidence,
+  type ConfidenceBreakdown,
+} from "@/lib/recommendation/confidence";
+import type { KnowledgeEvidenceRecord } from "@/lib/dify/types";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -45,6 +50,14 @@ export function LiveCopilotClient({
   const [listening, setListening] = React.useState(false);
   const [analyzing, setAnalyzing] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  // 推荐的知识库依据 + 推荐置信度(量化 + Dify 缝合)
+  const [recRecords, setRecRecords] = React.useState<KnowledgeEvidenceRecord[]>(
+    []
+  );
+  const [recConfidence, setRecConfidence] =
+    React.useState<ConfidenceBreakdown | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = React.useState(false);
+  const [scriptLoading, setScriptLoading] = React.useState(false);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recogRef = React.useRef<any>(null);
@@ -52,9 +65,15 @@ export function LiveCopilotClient({
   const silenceTimerRef = React.useRef<ReturnType<typeof setTimeout> | null>(
     null
   );
+  const restartGuardRef = React.useRef(0); // 连续异常结束计数,防 aborted 死循环
   React.useEffect(() => {
     linesRef.current = lines;
   }, [lines]);
+  // 镜像最新推荐,供"无新推荐的轮次"做话术背景
+  const recRef = React.useRef<Recommendation | null>(null);
+  React.useEffect(() => {
+    recRef.current = rec;
+  }, [rec]);
 
   function clearSilenceTimer() {
     if (silenceTimerRef.current) clearTimeout(silenceTimerRef.current);
@@ -64,6 +83,83 @@ export function LiveCopilotClient({
   function armSilenceTimer() {
     clearSilenceTimer();
     silenceTimerRef.current = setTimeout(() => stop(), SILENCE_MS);
+  }
+
+  // 把抽出的需求映射成 Dify 检索用的"四问场景"(对齐 recommendation-evidence 路由的取值)
+  function needToAnswers(need?: NeedProfile) {
+    const sceneMap: Record<string, string> = {
+      代码: "code",
+      长文本: "longdoc",
+      数学推理: "reasoning",
+    };
+    return {
+      scene: (need?.task && sceneMap[need.task]) || "general",
+      scale: "medium",
+      latency: "mid",
+      budget: need?.priceSensitive ? "low" : "mid",
+    };
+  }
+
+  // 拿到推荐后,从 Dify 选型知识库检索定性依据,并把量化分 + 知识依据缝成推荐置信度
+  async function fetchEvidence(r: Recommendation, need?: NeedProfile) {
+    setEvidenceLoading(true);
+    setRecRecords([]);
+    setRecConfidence(null);
+    let records: KnowledgeEvidenceRecord[] = [];
+    try {
+      const res = await fetch("/api/recommendation-evidence", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          candidates: [{ modelId: r.targetModelId, modelName: r.targetModelId }],
+          answers: needToAnswers(need),
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        records = data?.results?.[0]?.records ?? [];
+      }
+    } catch {
+      // Dify 不可用不影响推荐,置信度退回主要看量化指标
+    } finally {
+      setRecRecords(records);
+      setRecConfidence(
+        calculateConfidence({
+          rank: 0,
+          adjustedScore: r.evidenceChain.score,
+          sceneMatched: true,
+          records,
+        })
+      );
+      setEvidenceLoading(false);
+    }
+  }
+
+  // 每轮客户发言后异步生成话术(慢路径,不阻塞弹屏);有推荐就带上模型,没有就纯异议应对
+  async function fetchScript(
+    text: string,
+    context: string | undefined,
+    currentIntent: IntentEvent,
+    r: Recommendation | null
+  ) {
+    setScriptLoading(true);
+    setScript(null);
+    try {
+      const s = await generateScript({
+        text,
+        context,
+        needType: currentIntent.needType,
+        note: currentIntent.note,
+        targetModelId: r?.targetModelId,
+        reason: r?.reason,
+        score: r?.evidenceChain.score,
+      });
+      setScript(s);
+    } catch {
+      // 话术生成失败就不显示,不影响推荐
+    } finally {
+      setScriptLoading(false);
+    }
   }
 
   async function onFinalUtterance(raw: string) {
@@ -80,8 +176,20 @@ export function LiveCopilotClient({
       const res = await analyzeUtterance(text, context || undefined);
       setIntent(res.intent);
       // 命中才更新,没命中保留上一次(也可按需清空)
-      if (res.recommendation) setRec(res.recommendation);
-      if (res.script) setScript(res.script);
+      if (res.recommendation) {
+        setRec(res.recommendation);
+        // Dify 证据+置信度异步,不阻塞弹屏
+        fetchEvidence(res.recommendation, res.need);
+      }
+      // 话术:每轮有意义的意图都更新(贴合客户刚说的话),带上当前/上一次推荐做背景
+      if (res.intent.needType !== "无明显意图") {
+        fetchScript(
+          text,
+          context || undefined,
+          res.intent,
+          res.recommendation ?? recRef.current
+        );
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "意图分析失败");
     } finally {
@@ -106,6 +214,7 @@ export function LiveCopilotClient({
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     recog.onresult = (e: any) => {
+      restartGuardRef.current = 0; // 收到结果说明会话健康,清零
       let it = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         const tr = e.results[i][0].transcript;
@@ -116,13 +225,40 @@ export function LiveCopilotClient({
       armSilenceTimer(); // 有声音就续命
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recog.onerror = (e: any) => setError("识别出错:" + e.error);
-    // 连续模式下偶尔会自己结束,只要还在听就自动重启
+    recog.onerror = (e: any) => {
+      console.error("[Web Speech error]", e.error, e.message ?? "");
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") {
+        setError("麦克风未授权:请点浏览器地址栏左侧允许麦克风,再点开始说话。");
+        recogRef.current = null; // 别再自动重启
+        setListening(false);
+        return;
+      }
+      // 诊断用:把原始错误码显示出来(network=连不上谷歌;no-speech=没收到声音;aborted=被中断)
+      setError(`识别错误码:${e.error}` + (e.error === "network" ? "(连不上谷歌识别服务,国内常见)" : ""));
+      // no-speech / aborted / network 等交给 onend 决定是否重启
+    };
+    // Chrome 在连续模式下可能自己结束;延迟重启(立刻重启会和 Chrome 抢,触发 aborted 死循环)
     recog.onend = () => {
-      if (recogRef.current) recog.start();
+      if (recogRef.current !== recog) return; // 已主动停止或被替换
+      restartGuardRef.current += 1;
+      if (restartGuardRef.current > 5) {
+        setError("麦克风识别反复中断,请检查麦克风权限或网络后重试。");
+        recogRef.current = null;
+        setListening(false);
+        return;
+      }
+      setTimeout(() => {
+        if (recogRef.current !== recog) return;
+        try {
+          recog.start();
+        } catch {
+          /* InvalidStateError 等忽略 */
+        }
+      }, 250);
     };
 
     recogRef.current = recog;
+    restartGuardRef.current = 0;
     recog.start();
     setListening(true);
     armSilenceTimer(); // 开始后先起一个静音计时
@@ -234,21 +370,33 @@ export function LiveCopilotClient({
             </CardContent>
           </Card>
 
-          {script && (
+          {(script || scriptLoading) && (
             <div className="animate-fade-in">
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                ⚡ 触发话术
+                ⚡ 给销售的话术
               </p>
-              <TalkScriptCard script={script} />
+              {script ? (
+                <TalkScriptCard script={script} />
+              ) : (
+                <p className="rounded-md border border-dashed px-3 py-4 text-sm text-muted-foreground">
+                  话术生成中…(检索话术库 + AI 生成)
+                </p>
+              )}
             </div>
           )}
 
           {rec && (
             <div className="animate-fade-in">
               <p className="mb-1.5 text-xs font-medium text-muted-foreground">
-                ⚡ 动态推荐(附证据链)
+                ⚡ 动态推荐(证据链 + 知识库依据)
               </p>
-              <RecommendationCard recommendation={rec} />
+              <RecommendationCard
+                recommendation={rec}
+                defaultOpenEvidence
+                confidence={recConfidence ?? undefined}
+                records={recRecords}
+                loading={evidenceLoading}
+              />
             </div>
           )}
         </div>

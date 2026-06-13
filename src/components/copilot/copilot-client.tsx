@@ -21,15 +21,19 @@ import { IntentBadge } from "@/components/copilot/intent-badge";
 import { RecommendationCard } from "@/components/workbench/recommendation-card";
 import { TalkScriptCard } from "@/components/workbench/talk-script-card";
 import { LiveCopilotClient } from "@/components/copilot/live-copilot-client";
+import { CustomerProfilePanel } from "@/components/copilot/customer-profile-panel";
+import type { Briefing } from "@/lib/demo/briefings";
 
 const TICK_MS = 700; // 每 700ms 推进 1 秒
 
 /** P0-3 通话中实时 copilot —— 客户端交互(定时器驱动转写与弹屏)。 */
 export function CopilotClient({
   session,
+  briefing,
   customerId,
 }: {
   session: CopilotScript;
+  briefing: Briefing;
   customerId: string;
 }) {
   const { maxSec, transcript, intents, recommendations, scripts } = session;
@@ -93,6 +97,7 @@ export function CopilotClient({
   if (mode === "live") {
     return (
       <>
+        <CustomerProfilePanel briefing={briefing} />
         {modeToggle}
         <LiveCopilotClient
           customerId={customerId}
@@ -104,6 +109,7 @@ export function CopilotClient({
 
   return (
     <>
+      <CustomerProfilePanel briefing={briefing} />
       {modeToggle}
       <PageHeader
         title="通话中实时 Copilot"
