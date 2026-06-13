@@ -1,14 +1,30 @@
 "use client";
 
 import * as React from "react";
-import { ChevronDown, Check, Save, Mic, Bot, Plus, CheckCircle2 } from "lucide-react";
+import {
+  ChevronDown,
+  Check,
+  Save,
+  Mic,
+  Bot,
+  Plus,
+  CheckCircle2,
+  MessageSquareText,
+  RotateCcw,
+} from "lucide-react";
 
 import type { AsrModel, Model, SystemModelConfig } from "@/lib/types";
 import {
   CAPABILITY_SLOTS,
   type CapabilitySlot,
 } from "@/lib/demo/system-models";
-import { saveSystemModels } from "@/lib/api";
+import {
+  saveSystemModels,
+  getSystemPrompts,
+  saveSystemPrompts,
+  type SystemPrompts,
+} from "@/lib/api";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,10 +70,23 @@ export function SystemModelsClient({
   const [chatList, setChatList] = React.useState<Model[]>(chatModels);
   const [asrList, setAsrList] = React.useState<AsrModel[]>(asrModels);
   const [bindings, setBindings] = React.useState(config.bindings);
+  // 各能力位系统提示词:挂载时从后端拉取(键=能力位 key)。saved=已生效值的副本,用于"恢复默认"判断。
+  const [prompts, setPrompts] = React.useState<SystemPrompts>({});
+  const [savedPrompts, setSavedPrompts] = React.useState<SystemPrompts>({});
+  const [expanded, setExpanded] = React.useState<string | null>(null);
   const [saved, setSaved] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
   const [flash, setFlash] = React.useState(false);
   const counter = React.useRef(0);
+
+  React.useEffect(() => {
+    getSystemPrompts()
+      .then((p) => {
+        setPrompts(p);
+        setSavedPrompts(p);
+      })
+      .catch(() => {});
+  }, []);
 
   const [dialogOpen, setDialogOpen] = React.useState(false);
 
@@ -81,6 +110,11 @@ export function SystemModelsClient({
 
   function pick(slotKey: CapabilitySlot["key"], id: string) {
     setBindings((b) => ({ ...b, [slotKey]: id }));
+    setSaved(false);
+  }
+
+  function editPrompt(slotKey: string, text: string) {
+    setPrompts((p) => ({ ...p, [slotKey]: text }));
     setSaved(false);
   }
 
@@ -131,7 +165,13 @@ export function SystemModelsClient({
 
   async function handleSave() {
     setSaving(true);
-    await saveSystemModels({ ...config, bindings });
+    // 绑定走 saveSystemModels(mock 下仅前端);提示词走 BFF 真正落库并返回生效值
+    const [, effective] = await Promise.all([
+      saveSystemModels({ ...config, bindings }),
+      saveSystemPrompts(prompts).catch(() => prompts),
+    ]);
+    setPrompts(effective);
+    setSavedPrompts(effective);
     setSaving(false);
     setSaved(true);
     setFlash(true);
@@ -153,54 +193,70 @@ export function SystemModelsClient({
           const current = bindings[slot.key];
           return (
             <Card key={slot.key}>
-              <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
-                    {slot.kind === "asr" ? (
-                      <Mic className="h-4 w-4" />
-                    ) : (
-                      <Bot className="h-4 w-4" />
-                    )}
-                  </span>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium">{slot.label}</span>
-                      <Badge variant="outline" className="font-normal">
-                        {slot.kind === "asr" ? "语音模型" : "对话模型"}
-                      </Badge>
+              <CardContent className="flex flex-col gap-3 p-5">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex h-9 w-9 items-center justify-center rounded-md bg-primary/10 text-primary">
+                      {slot.kind === "asr" ? (
+                        <Mic className="h-4 w-4" />
+                      ) : (
+                        <Bot className="h-4 w-4" />
+                      )}
+                    </span>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{slot.label}</span>
+                        <Badge variant="outline" className="font-normal">
+                          {slot.kind === "asr" ? "语音模型" : "对话模型"}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{slot.desc}</p>
                     </div>
-                    <p className="text-sm text-muted-foreground">{slot.desc}</p>
                   </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" className="min-w-[14rem] justify-between">
+                        {optionName(slot, current)}
+                        <ChevronDown className="h-4 w-4 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-72">
+                      {options.map((o) => (
+                        <DropdownMenuItem
+                          key={o.id}
+                          onClick={() => pick(slot.key, o.id)}
+                          className="flex-col items-start gap-0.5"
+                        >
+                          <span className="flex w-full items-center justify-between">
+                            <span className="font-medium">{o.name}</span>
+                            {o.id === current && (
+                              <Check className="h-4 w-4 text-primary" />
+                            )}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
+                            {o.vendor}
+                            {o.meta ? ` · ${o.meta}` : ""}
+                          </span>
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline" className="min-w-[14rem] justify-between">
-                      {optionName(slot, current)}
-                      <ChevronDown className="h-4 w-4 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-72">
-                    {options.map((o) => (
-                      <DropdownMenuItem
-                        key={o.id}
-                        onClick={() => pick(slot.key, o.id)}
-                        className="flex-col items-start gap-0.5"
-                      >
-                        <span className="flex w-full items-center justify-between">
-                          <span className="font-medium">{o.name}</span>
-                          {o.id === current && (
-                            <Check className="h-4 w-4 text-primary" />
-                          )}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {o.vendor}
-                          {o.meta ? ` · ${o.meta}` : ""}
-                        </span>
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* 系统提示词:仅 LLM 位有(绑能力位,不绑模型) */}
+                {slot.kind === "chat" && (
+                  <PromptEditor
+                    open={expanded === slot.key}
+                    onToggle={() =>
+                      setExpanded((k) => (k === slot.key ? null : slot.key))
+                    }
+                    value={prompts[slot.key] ?? ""}
+                    dirty={(prompts[slot.key] ?? "") !== (savedPrompts[slot.key] ?? "")}
+                    wired={slot.key === "chatbot"}
+                    onChange={(t) => editPrompt(slot.key, t)}
+                  />
+                )}
               </CardContent>
             </Card>
           );
@@ -225,6 +281,69 @@ export function SystemModelsClient({
       </div>
 
       <AddModelDialog open={dialogOpen} onOpenChange={setDialogOpen} onAdd={addModel} />
+    </div>
+  );
+}
+
+function PromptEditor({
+  open,
+  onToggle,
+  value,
+  dirty,
+  wired,
+  onChange,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  value: string;
+  dirty: boolean;
+  wired: boolean;
+  onChange: (text: string) => void;
+}) {
+  return (
+    <div className="rounded-md border bg-muted/30">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="flex w-full items-center gap-2 px-3 py-2 text-sm"
+      >
+        <MessageSquareText className="h-4 w-4 text-muted-foreground" />
+        <span className="font-medium">系统提示词</span>
+        <Badge
+          variant={wired ? "success" : "secondary"}
+          className="font-normal"
+        >
+          {wired ? "已生效" : "待接入"}
+        </Badge>
+        {dirty && (
+          <span className="h-1.5 w-1.5 rounded-full bg-warning" title="有未保存的改动" />
+        )}
+        <ChevronDown
+          className={cn(
+            "ml-auto h-4 w-4 text-muted-foreground transition-transform",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+      {open && (
+        <div className="space-y-2 border-t p-3">
+          <textarea
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            rows={8}
+            spellCheck={false}
+            className="w-full resize-y rounded-md border bg-background px-3 py-2 font-mono text-xs leading-relaxed outline-none focus-visible:ring-1 focus-visible:ring-ring"
+            placeholder="该能力位的系统提示词…"
+          />
+          <p className="text-xs text-muted-foreground">
+            {wired
+              ? "提示词绑定「能力位」而非模型——换模型不丢提示词。保存后答疑 Chatbot 立即按新提示词作答。"
+              : "默认值已就位,可编辑并落库;该能力位接入后即按此提示词生效。"}
+            {" "}
+            {value.length} 字
+          </p>
+        </div>
+      )}
     </div>
   );
 }

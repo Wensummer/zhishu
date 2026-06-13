@@ -196,6 +196,30 @@ export async function saveSystemModels(
   return config;
 }
 
+/**
+ * 各能力位系统提示词(键=能力位 key,如 chatbot/intent/summary/selection)。
+ * 始终走同源 BFF 直连后端(不受 USE_MOCK 影响),保证答疑位提示词真正落库生效。
+ */
+export type SystemPrompts = Record<string, string>;
+
+export async function getSystemPrompts(): Promise<SystemPrompts> {
+  const res = await fetch("/api/admin/system-prompts", { cache: "no-store" });
+  if (!res.ok) throw new Error(`getSystemPrompts ${res.status}`);
+  return res.json();
+}
+
+export async function saveSystemPrompts(
+  prompts: SystemPrompts
+): Promise<SystemPrompts> {
+  const res = await fetch("/api/admin/system-prompts", {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompts }),
+  });
+  if (!res.ok) throw new Error(`saveSystemPrompts ${res.status}`);
+  return res.json();
+}
+
 // ============ 计费明细 ============
 export interface BillingQuery {
   startDate?: string;
