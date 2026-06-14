@@ -1,3 +1,4 @@
+import { redirect } from "next/navigation";
 import { Wallet, Activity, Receipt } from "lucide-react";
 
 import type { TimeSeriesPoint } from "@/lib/types";
@@ -20,9 +21,21 @@ const USAGE: TimeSeriesPoint[] = [
   { date: "6/10", value: 1.9 },
 ];
 
-/** P2-9 C 端用户面板。 */
-export default async function UserPanelPage() {
-  const records = await getBillingRecords();
+/** P2-9 C 端用户面板。
+ *
+ * 新用户(无任何消费记录)直接落地到「四问选型」,先帮他选对模型;有消费后才看用量页。
+ * 演示用 `?new=1` 强制模拟新用户(mock 默认有记录)。
+ */
+export default async function UserPanelPage({
+  searchParams,
+}: {
+  searchParams?: { new?: string };
+}) {
+  const records =
+    searchParams?.new === "1" ? [] : await getBillingRecords();
+
+  // 没有任何消费记录 → 引导去四问选型(toC 自助选型入口)
+  if (records.length === 0) redirect("/wizard");
 
   return (
     <>

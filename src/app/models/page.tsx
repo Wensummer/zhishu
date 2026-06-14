@@ -27,7 +27,10 @@ export default async function ModelsPage() {
         <CardContent>
           <PriceCompareChart models={models} />
           <p className="mt-2 text-xs text-muted-foreground">
-            气泡越大代表可用率越高;越靠左上角 = 越便宜且能力越强。悬浮查看单点详情。
+            每个气泡是一个模型(大小 = 可用率,颜色 = 厂商)。越靠
+            <span className="font-medium text-emerald-600">左上「甜点区」</span>
+            = 越便宜且能力越强;<span className="font-medium text-amber-500">★ 脉冲点</span>
+            为综合分最优;绿色虚线是「帕累托最优前沿」(再往左上已没有更划算的)。悬浮查看单点详情。
           </p>
         </CardContent>
       </Card>

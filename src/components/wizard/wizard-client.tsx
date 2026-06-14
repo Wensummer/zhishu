@@ -1,30 +1,50 @@
 "use client";
 
 import * as React from "react";
-import { ArrowLeft, ArrowRight, RotateCcw, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  RotateCcw,
+  Sparkles,
+  MessagesSquare,
+  Code2,
+  Library,
+  Brain,
+  BatteryLow,
+  BatteryMedium,
+  BatteryFull,
+  Zap,
+  Clock,
+  Moon,
+  PiggyBank,
+  Scale,
+  Gem,
+} from "lucide-react";
 
-import type { Model, Recommendation, WizardQuestion } from "@/lib/types";
+import type { Model, Recommendation } from "@/lib/types";
 import type { RecommendationKnowledgeBatchResponse } from "@/lib/dify/types";
 import { blendedPrice } from "@/lib/demo/models";
 import { calculateConfidence } from "@/lib/recommendation/confidence";
 import { scoreModel } from "@/lib/recommendation/score";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { QuestionStep } from "@/components/wizard/question-step";
+import {
+  QuestionStep,
+  type StepQuestion,
+} from "@/components/wizard/question-step";
 import { RecommendationCard } from "@/components/workbench/recommendation-card";
 
-const QUESTIONS: WizardQuestion[] = [
+const QUESTIONS: StepQuestion[] = [
   {
     id: "q1",
     field: "scene",
     question: "1 / 4 · 你的主要使用场景是?",
     options: [
-      { label: "通用对话 / 智能客服", value: "general" },
-      { label: "代码 / 研发提效", value: "code" },
-      { label: "长文档 / 知识库 RAG", value: "longdoc" },
-      { label: "复杂推理 / 数据分析", value: "reasoning" },
+      { label: "通用对话 / 智能客服", value: "general", icon: MessagesSquare, desc: "聊天机器人、客服问答、写文案" },
+      { label: "代码 / 研发提效", value: "code", icon: Code2, desc: "写代码、代码补全、技术问答" },
+      { label: "长文档 / 知识库 RAG", value: "longdoc", icon: Library, desc: "上传长文档 / 资料库做问答" },
+      { label: "复杂推理 / 数据分析", value: "reasoning", icon: Brain, desc: "数学、逻辑推理、数据分析" },
     ],
   },
   {
@@ -32,9 +52,9 @@ const QUESTIONS: WizardQuestion[] = [
     field: "scale",
     question: "2 / 4 · 预计月调用量级?",
     options: [
-      { label: "小(< 100 万 token / 月)", value: "small" },
-      { label: "中(100 万 ~ 1000 万)", value: "medium" },
-      { label: "大(> 1000 万)", value: "large" },
+      { label: "小(< 100 万 token / 月)", value: "small", icon: BatteryLow, desc: "个人或小项目,偶尔调用" },
+      { label: "中(100 万 ~ 1000 万)", value: "medium", icon: BatteryMedium, desc: "团队日常使用" },
+      { label: "大(> 1000 万)", value: "large", icon: BatteryFull, desc: "高频、规模化调用" },
     ],
   },
   {
@@ -42,9 +62,9 @@ const QUESTIONS: WizardQuestion[] = [
     field: "latency",
     question: "3 / 4 · 对响应延迟的敏感度?",
     options: [
-      { label: "高(实时交互,越快越好)", value: "high" },
-      { label: "一般", value: "mid" },
-      { label: "低(离线批处理可接受)", value: "low" },
+      { label: "高(实时交互,越快越好)", value: "high", icon: Zap, desc: "对话要秒回,如在线客服" },
+      { label: "一般", value: "mid", icon: Clock, desc: "等一两秒可以接受" },
+      { label: "低(离线批处理可接受)", value: "low", icon: Moon, desc: "夜间跑批,不赶时间最省钱" },
     ],
   },
   {
@@ -52,9 +72,9 @@ const QUESTIONS: WizardQuestion[] = [
     field: "budget",
     question: "4 / 4 · 预算取向?",
     options: [
-      { label: "性价比优先", value: "low" },
-      { label: "均衡", value: "mid" },
-      { label: "效果优先", value: "high" },
+      { label: "性价比优先", value: "low", icon: PiggyBank, desc: "够用就好,优先省钱" },
+      { label: "均衡", value: "mid", icon: Scale, desc: "效果与价格兼顾" },
+      { label: "效果优先", value: "high", icon: Gem, desc: "要最好的效果,预算其次" },
     ],
   },
 ];
@@ -265,9 +285,9 @@ export function WizardClient({ models }: { models: Model[] }) {
           {alternatives.length > 0 && (
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium">????</p>
+                <p className="text-sm font-medium">其他备选</p>
                 <p className="text-xs text-muted-foreground">
-                  ???????????????????????
+                  评分相近的候选模型,可对比参考。
                 </p>
               </div>
               {alternatives.map(
