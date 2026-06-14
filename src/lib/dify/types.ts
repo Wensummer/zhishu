@@ -17,8 +17,14 @@ export interface RecommendationKnowledgeResult
   extends KnowledgeEvidenceResponse {
   modelId: string;
   modelName: string;
+  theory: string;
 }
 
 export interface RecommendationKnowledgeBatchResponse {
   results: RecommendationKnowledgeResult[];
+}
+
+export interface RecommendationKnowledgeRequest {
+  candidates: Array<{ modelId: string; modelName: string; query: string }>;
+  forceRefresh?: boolean;
 }

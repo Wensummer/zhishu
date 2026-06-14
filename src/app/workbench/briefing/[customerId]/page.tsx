@@ -100,6 +100,7 @@ export default async function BriefingPage({
             recommendations={recommendations}
             customerName={customer.name}
             industry={customer.industry}
+            customerId={params.customerId}
           /></TabsContent>
 
         <TabsContent value="scripts">

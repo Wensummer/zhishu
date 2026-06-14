@@ -43,6 +43,7 @@ export const ROLES: Record<Role, RoleConfig> = {
       { href: "/admin/pricing", label: "价格配置" },
       { href: "/admin/operations", label: "运营分析" },
       { href: "/admin/compliance", label: "合规管理" },
+      { href: "/admin/data", label: "推荐依据" },
       { href: "/status", label: "状态监控" },
     ],
   },

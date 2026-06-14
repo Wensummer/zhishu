@@ -26,14 +26,18 @@ export function RecommendationCard({
   recommendation: r,
   defaultOpenEvidence,
   confidence,
+  theory,
   records,
   loading,
+  onRefresh,
 }: {
   recommendation: Recommendation;
   defaultOpenEvidence?: boolean;
   confidence?: ConfidenceBreakdown;
+  theory?: string;
   records?: KnowledgeEvidenceRecord[];
   loading?: boolean;
+  onRefresh?: () => void;
 }) {
   const meta = TYPE_META[r.type];
   return (
@@ -62,9 +66,11 @@ export function RecommendationCard({
           <RecommendationInsightCard
             modelName={r.title}
             confidence={confidence}
+            theory={theory}
             records={records ?? []}
             loading={loading}
             embedded
+            onRefresh={onRefresh}
           />
         )}
       </CardContent>
