@@ -23,6 +23,7 @@ import { TalkScriptCard } from "@/components/workbench/talk-script-card";
 import { LiveCopilotClient } from "@/components/copilot/live-copilot-client";
 import { CustomerProfilePanel } from "@/components/copilot/customer-profile-panel";
 import type { Briefing } from "@/lib/demo/briefings";
+import type { EnterpriseInfo } from "@/lib/types";
 
 const TICK_MS = 700; // 每 700ms 推进 1 秒
 
@@ -30,10 +31,12 @@ const TICK_MS = 700; // 每 700ms 推进 1 秒
 export function CopilotClient({
   session,
   briefing,
+  enterpriseInfo,
   customerId,
 }: {
   session: CopilotScript;
   briefing: Briefing;
+  enterpriseInfo: EnterpriseInfo;
   customerId: string;
 }) {
   const { maxSec, transcript, intents, recommendations, scripts } = session;
@@ -97,7 +100,7 @@ export function CopilotClient({
   if (mode === "live") {
     return (
       <>
-        <CustomerProfilePanel briefing={briefing} />
+        <CustomerProfilePanel briefing={briefing} enterpriseInfo={enterpriseInfo} />
         {modeToggle}
         <LiveCopilotClient
           customerId={customerId}
@@ -109,7 +112,7 @@ export function CopilotClient({
 
   return (
     <>
-      <CustomerProfilePanel briefing={briefing} />
+      <CustomerProfilePanel briefing={briefing} enterpriseInfo={enterpriseInfo} />
       {modeToggle}
       <PageHeader
         title="通话中实时 Copilot"

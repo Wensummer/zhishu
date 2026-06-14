@@ -106,6 +106,135 @@ export interface UsageRecord {
   lastActiveAt: string;
 }
 
+// ============ 企业画像(企查查嵌入) ============
+
+/** 工商基本信息。 */
+export interface EnterpriseProfile {
+  name: string;
+  /** 统一社会信用代码 */
+  creditCode: string;
+  legalPerson: string;
+  registeredCapital: string;
+  /** 成立日期 */
+  establishDate: string;
+  /** 经营状态 */
+  businessStatus: string;
+  address: string;
+  /** 经营范围(摘要) */
+  businessScope: string;
+  /** 联系人/决策人(销售话术用) */
+  contactPerson?: string;
+  /** 联系电话 */
+  contactPhone?: string;
+}
+
+/** 主要人员。 */
+export interface EnterpriseKeyPersonnel {
+  name: string;
+  title: string;     // 董事长 / 总经理 / 财务负责人 / 技术总监
+}
+
+/** 股东信息。 */
+export interface EnterpriseShareholder {
+  name: string;
+  /** 出资比例 */
+  ratio: string;
+  /** 认缴出资额 */
+  amount: string;
+}
+
+/** 实际控制人。 */
+export interface EnterpriseController {
+  name: string;
+  /** 控制比例 */
+  ratio: string;
+  /** 控制路径简述 */
+  path?: string;
+}
+
+/** 对外投资/分支机构。 */
+export interface EnterpriseBranch {
+  name: string;
+  /** 投资比例 */
+  ratio: string;
+  /** 投资金额 */
+  amount: string;
+  businessStatus: string;
+}
+
+/** 荣誉资质。 */
+export interface EnterpriseHonor {
+  name: string;
+  issuer: string;    // 颁发机构
+  date: string;
+}
+
+/** 融资动态。 */
+export interface EnterpriseFunding {
+  round: string;     // 天使轮 / A轮 / B轮
+  amount: string;
+  date: string;
+  investors: string; // 投资方
+}
+
+/** 风险记录。 */
+export interface EnterpriseRiskItem {
+  type: string;       // "经营异常" / "行政处罚" / "裁判文书" / "失信被执行"
+  title: string;
+  date: string;
+  amount?: string;    // 涉及金额(可选)
+  department?: string; // 执行机关
+  detail: string;
+}
+
+/** 新闻舆情。 */
+export interface EnterpriseNews {
+  title: string;
+  url: string;
+  date: string;
+  /** 情感:积极 / 中性 / 消极 */
+  sentiment: "positive" | "neutral" | "negative";
+  summary: string;
+}
+
+/** 知识产权。 */
+export interface EnterpriseIPR {
+  type: "patent" | "trademark" | "copyright";
+  name: string;
+  regNo: string;
+  status: string;
+  applyDate: string;
+}
+
+/** 招投标记录。 */
+export interface EnterpriseBid {
+  title: string;
+  publishDate: string;
+  amount: string;
+  buyer: string;
+}
+
+/** 企业画像(企查查信息聚合)。 */
+export interface EnterpriseInfo {
+  profile: EnterpriseProfile;
+  /** 主要人员(决策链,用于话术/拜访对象)。 */
+  personnel: EnterpriseKeyPersonnel[];
+  /** 股东信息。 */
+  shareholders: EnterpriseShareholder[];
+  /** 实际控制人。 */
+  controller?: EnterpriseController;
+  /** 对外投资/分支机构(判断交叉销售机会)。 */
+  branches: EnterpriseBranch[];
+  /** 荣誉资质(简报资质背书)。 */
+  honors: EnterpriseHonor[];
+  /** 融资动态(了解资金状况)。 */
+  funding: EnterpriseFunding[];
+  risks: EnterpriseRiskItem[];
+  news: EnterpriseNews[];
+  ipr: EnterpriseIPR[];
+  bids: EnterpriseBid[];
+}
+
 // ============ 计费明细 ============
 export interface BillingRecord {
   id: string;

@@ -9,6 +9,7 @@
 import type {
   Announcement,
   AsrModel,
+  EnterpriseInfo,
   Metric,
   Model,
   SystemModelConfig,
@@ -43,6 +44,7 @@ import type {
   TalkScript,
   TimeSeriesPoint,
 } from "@/lib/types";
+import { getEnterpriseInfo as getDemoEnterpriseInfo } from "@/lib/demo/enterprise";
 import { getCEndBillingRecords, getCustomerBillingRecords } from "@/lib/demo/billing";
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK !== "false";
@@ -153,6 +155,12 @@ export async function generateScript(params: {
 export async function getAnnouncements(): Promise<Announcement[]> {
   if (!USE_MOCK) return fetchJson<Announcement[]>("/announcements");
   return DEMO_ANNOUNCEMENTS;
+}
+
+// ============ 企业画像(企查查) ============
+export async function getEnterpriseInfo(customerId: string): Promise<EnterpriseInfo> {
+  if (!USE_MOCK) return fetchJson<EnterpriseInfo>(`/enterprise/${customerId}`);
+  return getDemoEnterpriseInfo(customerId);
 }
 
 // ============ 管理侧大屏 ============

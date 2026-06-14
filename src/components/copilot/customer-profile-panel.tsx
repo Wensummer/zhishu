@@ -13,12 +13,15 @@ import {
 } from "lucide-react";
 
 import type { Briefing } from "@/lib/demo/briefings";
+import type { EnterpriseInfo } from "@/lib/types";
 import { formatCNY, cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkline } from "@/components/shared/sparkline";
 import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { TalkScriptCard } from "@/components/workbench/talk-script-card";
+import { StrategyInsights } from "@/components/enterprise/enterprise-panel";
+import { EnterpriseRadarCard } from "@/components/enterprise/enterprise-radar";
 
 const SCENE_LABEL: Record<string, string> = {
   opening: "开场",
@@ -31,12 +34,19 @@ const SCENE_LABEL: Record<string, string> = {
 const avg = (a: number[]) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length : 0);
 
 /**
- * 通话页顶部「客户背景」面板 —— 复用通话前简报数据,让销售一进门就有上下文。
- * 客户身份 + 商机阶段 + 当前模型/余额/到期 + 风险 + 用量趋势 + AI 预判 + 随身话术。
+ * 通话页顶部「客户背景」面板 —— 复用通话前简报数据 + 企业画像快照,
+ * 让销售一进门就有上下文。
+ * 客户身份 + 商机阶段 + 当前模型/余额/到期 + 风险 + 用量趋势 + AI 预判 + 随身话术 + 企业快照。
  */
-export function CustomerProfilePanel({ briefing }: { briefing: Briefing }) {
+export function CustomerProfilePanel({
+  briefing,
+  enterpriseInfo,
+}: {
+  briefing: Briefing;
+  enterpriseInfo?: EnterpriseInfo;
+}) {
   const { customer, usage, recommendations, scripts } = briefing;
-  const [showScripts, setShowScripts] = React.useState(false);
+  const [showScripts, setShowScripts] = React.useState(true);
 
   const values = usage.map((u) => u.value);
   // 用近半段 vs 前半段均值算趋势,比首尾对比更稳
@@ -107,6 +117,11 @@ export function CustomerProfilePanel({ briefing }: { briefing: Briefing }) {
           </div>
         )}
 
+        {/* 企业画像卡片: 策略提示 + 雷达图 */}
+        {enterpriseInfo && (
+          <EnterpriseBriefCard info={enterpriseInfo} />
+        )}
+
         {/* 随身话术(折叠) */}
         <div>
           <button
@@ -139,6 +154,50 @@ export function CustomerProfilePanel({ briefing }: { briefing: Briefing }) {
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * 企业画像卡片 — 策略提示(左) + 雷达图(右),通话中供销售快速了解企业画像。
+ */
+function EnterpriseBriefCard({ info }: { info: EnterpriseInfo }) {
+  const [open, setOpen] = React.useState(false);
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-center gap-2 text-left text-sm"
+      >
+        <Lightbulb className="h-3.5 w-3.5 shrink-0 text-amber-500" />
+        <span className="shrink-0 font-medium">企业画像</span>
+        {info.risks.length > 0 && (
+          <Badge variant="outline" className="gap-1 text-[10px] text-amber-600 border-amber-300">
+            <AlertTriangle className="h-2.5 w-2.5" />
+            {info.risks.length} 项风险
+          </Badge>
+        )}
+        <span className="hidden text-xs text-muted-foreground sm:inline">
+          {info.profile.legalPerson} · {info.profile.registeredCapital}
+        </span>
+        <ChevronDown
+          className={cn(
+            "ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+            open && "rotate-180"
+          )}
+        />
+      </button>
+      {open && (
+        <div className="mt-2 grid gap-3 sm:grid-cols-2">
+          <StrategyInsights info={info} />
+          <Card>
+            <CardContent className="flex items-center justify-center p-3">
+              <EnterpriseRadarCard info={info} />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+    </div>
   );
 }
 

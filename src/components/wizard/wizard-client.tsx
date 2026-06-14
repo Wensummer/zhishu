@@ -285,9 +285,9 @@ export function WizardClient({ models }: { models: Model[] }) {
           {alternatives.length > 0 && (
             <div className="space-y-3">
               <div>
-                <p className="text-sm font-medium">其他备选</p>
+                <p className="text-sm font-medium">其他推荐方案</p>
                 <p className="text-xs text-muted-foreground">
-                  评分相近的候选模型,可对比参考。
+                  基于同一套选型引擎,以下为备选方案,你可根据客户实际偏好灵活调整推荐策略。
                 </p>
               </div>
               {alternatives.map(

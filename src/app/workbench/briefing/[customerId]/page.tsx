@@ -6,10 +6,11 @@ import {
   AlertTriangle,
   Bug,
   ArrowRight,
+  Building2,
 } from "lucide-react";
 
 import { formatCNY } from "@/lib/utils";
-import { getBriefing, getBillingRecords } from "@/lib/api";
+import { getBriefing, getBillingRecords, getEnterpriseInfo } from "@/lib/api";
 import { PageHeader } from "@/components/layout/page-header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,6 +21,7 @@ import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { BriefingRecommendationsClient } from "@/components/workbench/briefing-recommendations-client";
 import { BriefingScriptsClient } from "@/components/workbench/briefing-scripts-client";
 import { TelecomRecommendCard } from "@/components/workbench/telecom-recommend-card";
+import { EnterprisePanel } from "@/components/enterprise/enterprise-panel";
 
 /** P0-2 通话前智能简报(单客户详情)。 */
 export default async function BriefingPage({
@@ -32,6 +34,7 @@ export default async function BriefingPage({
   const billingRecords = await getBillingRecords({
     customerId: params.customerId,
   });
+  const enterpriseInfo = await getEnterpriseInfo(params.customerId);
 
   return (
     <>
@@ -76,6 +79,7 @@ export default async function BriefingPage({
           <TabsTrigger value="usage">使用情况</TabsTrigger>
           <TabsTrigger value="recommend">推荐选型</TabsTrigger>
           <TabsTrigger value="scripts">随身话术</TabsTrigger>
+          <TabsTrigger value="enterprise">企业画像</TabsTrigger>
           <TabsTrigger value="opportunity">商机判断</TabsTrigger>
         </TabsList>
 
@@ -100,6 +104,10 @@ export default async function BriefingPage({
 
         <TabsContent value="scripts">
           <BriefingScriptsClient scripts={scripts} customerName={customer.name} />
+        </TabsContent>
+
+        <TabsContent value="enterprise" className="space-y-4">
+          <EnterprisePanel info={enterpriseInfo} />
         </TabsContent>
 
         <TabsContent value="opportunity" className="space-y-4">
