@@ -228,6 +228,66 @@ export async function saveSystemPrompts(
   return res.json();
 }
 
+// ============ 通话小结 / 沟通历史 ============
+/** 一轮对话:客户说的话 + 当轮意图/推荐/给销售的话术。 */
+export interface CallTurn {
+  customerSaid: string;
+  needType?: string;
+  recommendation?: string;
+  script?: string;
+}
+
+/** 一次通话的结构化小结(LLM 生成,持久化为客户沟通历史)。 */
+export interface CallSummary {
+  id?: string;
+  customerId: string;
+  createdAt: string;
+  demand: string;
+  intents: string;
+  recommendation: string;
+  temperature: string; // 热 / 温 / 冷
+  nextSteps: string[];
+  scripts: string[];
+  turns?: CallTurn[];
+}
+
+/** 结束通话后据整通转写生成小结(真 LLM,不持久化)。始终走 BFF 直连后端。 */
+export async function generateCallSummary(input: {
+  transcript: string;
+  customerId: string;
+  customerName?: string;
+}): Promise<CallSummary> {
+  const res = await fetch("/api/copilot/summary/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error(`generateCallSummary ${res.status}`);
+  return res.json();
+}
+
+/** 保存小结到客户名下(持久化 + 回流商机标签)。 */
+export async function saveCallSummary(summary: CallSummary): Promise<CallSummary> {
+  const res = await fetch("/api/copilot/summary/save", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(summary),
+  });
+  if (!res.ok) throw new Error(`saveCallSummary ${res.status}`);
+  return res.json();
+}
+
+/** 某客户的沟通历史(跟进时间线,最新在前)。失败返回空。 */
+export async function getCallSummaries(
+  customerId: string
+): Promise<CallSummary[]> {
+  const res = await fetch(`/api/copilot/summary/${customerId}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  return res.json();
+}
+
 // ============ 计费明细 ============
 export interface BillingQuery {
   startDate?: string;

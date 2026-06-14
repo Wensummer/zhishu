@@ -10,11 +10,13 @@ import {
   TrendingDown,
   Lightbulb,
   ChevronDown,
+  History,
 } from "lucide-react";
 
 import type { Briefing } from "@/lib/demo/briefings";
 import type { EnterpriseInfo } from "@/lib/types";
 import { formatCNY, cn } from "@/lib/utils";
+import { getCallSummaries, type CallSummary } from "@/lib/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Sparkline } from "@/components/shared/sparkline";
@@ -22,6 +24,12 @@ import { OpportunityTag } from "@/components/workbench/opportunity-tag";
 import { TalkScriptCard } from "@/components/workbench/talk-script-card";
 import { StrategyInsights } from "@/components/enterprise/enterprise-panel";
 import { EnterpriseRadarCard } from "@/components/enterprise/enterprise-radar";
+
+const TEMP_VARIANT: Record<string, "destructive" | "warning" | "secondary"> = {
+  热: "destructive",
+  温: "warning",
+  冷: "secondary",
+};
 
 const SCENE_LABEL: Record<string, string> = {
   opening: "开场",
@@ -41,12 +49,22 @@ const avg = (a: number[]) => (a.length ? a.reduce((s, x) => s + x, 0) / a.length
 export function CustomerProfilePanel({
   briefing,
   enterpriseInfo,
+  customerId,
 }: {
   briefing: Briefing;
   enterpriseInfo?: EnterpriseInfo;
+  customerId: string;
 }) {
   const { customer, usage, recommendations, scripts } = briefing;
-  const [showScripts, setShowScripts] = React.useState(true);
+  const [showScripts, setShowScripts] = React.useState(false);
+  const [history, setHistory] = React.useState<CallSummary[]>([]);
+  const [showHistory, setShowHistory] = React.useState(false);
+  const [openId, setOpenId] = React.useState<string | null>(null);
+
+  // 沟通历史(历次通话小结,跟进时间线)—— 走 BFF 直连后端,不受 mock 影响
+  React.useEffect(() => {
+    getCallSummaries(customerId).then(setHistory).catch(() => {});
+  }, [customerId]);
 
   const values = usage.map((u) => u.value);
   // 用近半段 vs 前半段均值算趋势,比首尾对比更稳
@@ -152,6 +170,113 @@ export function CustomerProfilePanel({
             </div>
           )}
         </div>
+
+        {/* 沟通历史(历次通话小结,跟进时间线) */}
+        {history.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowHistory((v) => !v)}
+              className="flex w-full items-center gap-2 text-left text-sm"
+            >
+              <History className="h-4 w-4 shrink-0 text-muted-foreground" />
+              <span className="shrink-0 font-medium">
+                沟通历史（{history.length}）
+              </span>
+              <span className="truncate text-xs text-muted-foreground">
+                最近 {history[0].createdAt} · {history[0].temperature}意向
+              </span>
+              <ChevronDown
+                className={cn(
+                  "ml-auto h-4 w-4 shrink-0 text-muted-foreground transition-transform",
+                  showHistory && "rotate-180"
+                )}
+              />
+            </button>
+            {showHistory && (
+              <div className="mt-2 space-y-2">
+                {history.map((h) => {
+                  const key = h.id ?? h.createdAt;
+                  const open = openId === key;
+                  return (
+                    <div
+                      key={key}
+                      className="overflow-hidden rounded-md border bg-background text-xs"
+                    >
+                      {/* 折叠态:一行摘要 */}
+                      <button
+                        type="button"
+                        onClick={() => setOpenId(open ? null : key)}
+                        className="flex w-full items-center gap-2 p-2.5 text-left"
+                      >
+                        <span className="shrink-0 text-muted-foreground">
+                          {h.createdAt}
+                        </span>
+                        <Badge
+                          variant={TEMP_VARIANT[h.temperature] ?? "secondary"}
+                          className="shrink-0 text-[10px]"
+                        >
+                          {h.temperature}意向
+                        </Badge>
+                        <span className="truncate">{h.demand}</span>
+                        <ChevronDown
+                          className={cn(
+                            "ml-auto h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform",
+                            open && "rotate-180"
+                          )}
+                        />
+                      </button>
+                      {/* 展开态:完整记录 */}
+                      {open && (
+                        <div className="space-y-1.5 border-t px-2.5 py-2 text-muted-foreground">
+                          <HistField label="客户诉求" value={h.demand} />
+                          <HistField label="意图与异议" value={h.intents} />
+                          <HistField label="推荐与报价" value={h.recommendation} />
+                          {h.nextSteps.length > 0 && (
+                            <HistList label="下一步跟进" items={h.nextSteps} />
+                          )}
+                          {h.scripts.length > 0 && (
+                            <HistList label="可沉淀话术" items={h.scripts} />
+                          )}
+                          {h.turns && h.turns.length > 0 && (
+                            <details className="rounded border bg-muted/30 p-1.5">
+                              <summary className="cursor-pointer font-medium text-foreground">
+                                通话回放（{h.turns.length} 轮）
+                              </summary>
+                              <div className="mt-1.5 space-y-1.5">
+                                {h.turns.map((t, i) => (
+                                  <div
+                                    key={i}
+                                    className="border-l-2 border-primary/30 pl-2"
+                                  >
+                                    <p>
+                                      <span className="font-medium text-foreground">
+                                        客户:
+                                      </span>{" "}
+                                      {t.customerSaid}
+                                    </p>
+                                    {t.recommendation && (
+                                      <p className="font-medium text-primary">
+                                        推荐:{t.recommendation}
+                                      </p>
+                                    )}
+                                    {t.script && (
+                                      <p>话术:{t.script}</p>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -197,6 +322,28 @@ function EnterpriseBriefCard({ info }: { info: EnterpriseInfo }) {
           </Card>
         </div>
       )}
+    </div>
+  );
+}
+
+function HistField({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <p>
+      <span className="font-medium text-foreground">{label}:</span> {value}
+    </p>
+  );
+}
+
+function HistList({ label, items }: { label: string; items: string[] }) {
+  return (
+    <div>
+      <p className="font-medium text-foreground">{label}:</p>
+      <ul className="list-disc space-y-0.5 pl-4">
+        {items.map((s, i) => (
+          <li key={i}>{s}</li>
+        ))}
+      </ul>
     </div>
   );
 }

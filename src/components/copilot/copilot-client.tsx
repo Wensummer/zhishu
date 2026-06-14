@@ -100,7 +100,11 @@ export function CopilotClient({
   if (mode === "live") {
     return (
       <>
-        <CustomerProfilePanel briefing={briefing} enterpriseInfo={enterpriseInfo} />
+        <CustomerProfilePanel
+          briefing={briefing}
+          enterpriseInfo={enterpriseInfo}
+          customerId={customerId}
+        />
         {modeToggle}
         <LiveCopilotClient
           customerId={customerId}
@@ -112,7 +116,11 @@ export function CopilotClient({
 
   return (
     <>
-      <CustomerProfilePanel briefing={briefing} enterpriseInfo={enterpriseInfo} />
+      <CustomerProfilePanel
+        briefing={briefing}
+        enterpriseInfo={enterpriseInfo}
+        customerId={customerId}
+      />
       {modeToggle}
       <PageHeader
         title="通话中实时 Copilot"

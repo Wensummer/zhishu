@@ -29,8 +29,14 @@ export default async function BriefingPage({
 }: {
   params: { customerId: string };
 }) {
-  const { customer, usage, recommendations, scripts, telecomProducts, nextActions } =
-    await getBriefing(params.customerId);
+  const {
+    customer,
+    usage,
+    recommendations,
+    scripts,
+    telecomProducts = [],
+    nextActions = [],
+  } = await getBriefing(params.customerId);
   const billingRecords = await getBillingRecords({
     customerId: params.customerId,
   });
@@ -131,16 +137,18 @@ export default async function BriefingPage({
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-base">其他电信业务推荐</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {telecomProducts.map((product) => (
-                <TelecomRecommendCard key={product.id} product={product} />
-              ))}
-            </CardContent>
-          </Card>
+          {telecomProducts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">其他电信业务推荐</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {telecomProducts.map((product) => (
+                  <TelecomRecommendCard key={product.id} product={product} />
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
       </Tabs>
     </>

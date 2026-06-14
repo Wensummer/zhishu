@@ -12,7 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Sparkline } from "@/components/shared/sparkline";
+import { UptimeBar } from "@/components/status/uptime-bar";
 import { HealthBarometer } from "@/components/status/health-barometer";
 import { AnnouncementTimeline } from "@/components/status/announcement-timeline";
 
@@ -59,7 +59,7 @@ export default async function StatusPage() {
                 <TableHead>缓存命中(参考)</TableHead>
                 <TableHead>TTFT</TableHead>
                 <TableHead>TPOT</TableHead>
-                <TableHead className="w-32">近 7 天可用率</TableHead>
+                <TableHead className="w-36">近 7 天稳定度</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -86,17 +86,7 @@ export default async function StatusPage() {
                     <TableCell className="tabular-nums">{m.ttftMs}ms</TableCell>
                     <TableCell className="tabular-nums">{m.tpotMs}ms</TableCell>
                     <TableCell>
-                      <Sparkline
-                        data={availSeries(m.availability, i)}
-                        height={28}
-                        color={
-                          h === "ok"
-                            ? "hsl(var(--success))"
-                            : h === "warn"
-                              ? "hsl(var(--warning))"
-                              : "hsl(var(--destructive))"
-                        }
-                      />
+                      <UptimeBar data={availSeries(m.availability, i)} />
                     </TableCell>
                   </TableRow>
                 );
